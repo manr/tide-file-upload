@@ -49,7 +49,7 @@ pub async fn put_file(req: Request<AppState>) -> tide::Result {
         name: String::from(path_str),
         size: bytes_written,
     };
-    
+
     if let Ok(body) = Body::from_json(&response) {
         Ok(body.into())
     } else {
@@ -61,11 +61,11 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
     let path = req.param("file")?;
     let fs_path = req.state().path().join(path);
     let f = File::create(&fs_path).await?;
-    //let mut buf = vec![0u8; 1024];
     let mut buf_reader = BufReader::new(req);
     let mut buf_writer = BufWriter::new(f);
-    let mut buf = vec![0u8; 1024];
+    let mut buf = vec![0u8; 8096];
     let mut bytes_written = 0u64;
+
     loop {
         let bytes_read = buf_reader.read(&mut buf).await?;
         if bytes_read > 0 {
@@ -79,8 +79,7 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
             break;
         }
     }
-    
-    //let bytes_written = io::copy(req, f).await?;
+
     let path_buf = fs_path.canonicalize()?;
     let path_str = match path_buf.to_str() {
         Some(s) => s,
