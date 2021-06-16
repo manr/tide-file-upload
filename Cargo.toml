@@ -1,10 +1,8 @@
 [package]
 name = "file-eater"
 version = "0.1.0"
-authors = ["ManuelR <manuel.rupp@unitedplanet.de>"]
+authors = ["ManuelR"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tide = "0.16.0"
