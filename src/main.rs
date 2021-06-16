@@ -13,6 +13,8 @@ async fn main() -> tide::Result<()> {
     app.at("/file/:file").get(endpoints::get_file);
     app.at("/file/:file")
         .put(move |req: Request<AppState>| endpoints::put_file(req));
+    app.at("/upload/:file")
+        .put(move |req: Request<AppState>| endpoints::put_file_limited(req));
 
     app.listen("127.0.0.1:8080").await?;
 
