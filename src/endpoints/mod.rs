@@ -1,8 +1,11 @@
+use async_std::fs;
 use async_std::{fs::File};
 use async_std::io::{self, BufReader, BufWriter, prelude::*};
 use tide::{Body, Request, Response, StatusCode};
 
 use crate::types::{AppState, FileUploadResponse, IndexResponse};
+
+const FILE_LIMIT: u64 = 1024 * 1024;
 
 pub async fn get_index(mut _req: Request<AppState>) -> tide::Result {
     let response = IndexResponse {
@@ -63,8 +66,8 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
     let f = File::create(&fs_path).await?;
     let mut buf_reader = BufReader::new(req);
     let mut buf_writer = BufWriter::new(f);
-    let mut buf = vec![0u8; 8096];
-    let mut bytes_written = 0u64;
+    let mut buf = vec![0u8; 1024 * 1024];
+    let mut bytes_written: u64 = 0;
 
     loop {
         let bytes_read = buf_reader.read(&mut buf).await?;
@@ -74,8 +77,18 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
             });
             buf_writer.write(&buf[0..bytes_read]).await?;
             bytes_written = bytes_written + bytes_read as u64;
+
+            if bytes_written > FILE_LIMIT {
+                tide::log::warn!("file limit exceeded"); 
+
+                fs::remove_file(fs_path).await?;
+                
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
         } else {
-            buf_writer.flush().await?;
+            if bytes_written > 0 {
+                buf_writer.flush().await?;
+            }
             break;
         }
     }
