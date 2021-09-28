@@ -1,5 +1,5 @@
 [package]
-name = "file-eater"
+name = "tide-file-upload"
 version = "0.1.0"
 authors = ["ManuelR"]
 edition = "2018"

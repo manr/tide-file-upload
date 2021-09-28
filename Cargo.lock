@@ -608,17 +608,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "file-eater"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-std",
- "serde",
- "tempfile",
- "tide",
-]
-
-[[package]]
 name = "form_urlencoded"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1465,6 +1454,17 @@ dependencies = [
  "route-recognizer",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "tide-file-upload"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-std",
+ "serde",
+ "tempfile",
+ "tide",
 ]
 
 [[package]]
