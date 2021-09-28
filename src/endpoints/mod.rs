@@ -1,11 +1,11 @@
 use async_std::fs;
 use async_std::{fs::File};
-use async_std::io::{self, BufReader, BufWriter, prelude::*};
+use async_std::io::{BufReader, BufWriter, prelude::*};
 use tide::{Body, Request, Response, StatusCode};
 
 use crate::types::{AppState, FileUploadResponse, IndexResponse};
 
-const FILE_LIMIT: u64 = 1024 * 1024;
+const FILE_LIMIT: u64 = 1024 ^ 3;
 
 pub async fn get_index(mut _req: Request<AppState>) -> tide::Result {
     let response = IndexResponse {
@@ -32,6 +32,7 @@ pub async fn get_file(req: Request<AppState>) -> tide::Result {
     }
 }
 
+/*
 pub async fn put_file(req: Request<AppState>) -> tide::Result {
     let path = req.param("file")?;
     let fs_path = req.state().path().join(path);
@@ -59,11 +60,13 @@ pub async fn put_file(req: Request<AppState>) -> tide::Result {
         Ok(Response::new(StatusCode::BadRequest))
     }
 }
+ */
 
 pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
     let path = req.param("file")?;
     let fs_path = req.state().path().join(path);
     let f = File::create(&fs_path).await?;
+    
     let mut buf_reader = BufReader::new(req);
     let mut buf_writer = BufWriter::new(f);
     let mut buf = vec![0u8; 1024 * 1024];
@@ -108,6 +111,7 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
         name: String::from(path_str),
         size: bytes_written,
     };
+
     if let Ok(body) = Body::from_json(&response) {
         Ok(body.into())
     } else {
