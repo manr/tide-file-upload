@@ -1,11 +1,13 @@
+use std::str::FromStr;
+
 use async_std::fs;
 use async_std::{fs::File};
 use async_std::io::{BufReader, BufWriter, prelude::*};
-use tide::{Body, Request, Response, StatusCode};
+use tide::{Body, Request};
 
 use crate::types::{AppState, FileUploadResponse, IndexResponse};
 
-const FILE_LIMIT: u64 = 1024 ^ 3;
+const FILE_LIMIT: u64 = 1024 * 1024 * 1024;
 
 pub async fn get_index(mut _req: Request<AppState>) -> tide::Result {
     let response = IndexResponse {
@@ -14,7 +16,7 @@ pub async fn get_index(mut _req: Request<AppState>) -> tide::Result {
     if let Ok(body) = Body::from_json(&response) {
         Ok(body.into())
     } else {
-        Err(tide::Error::from_str(403, "bad"))
+        Err(tide::Error::from_str(403, "bad request"))
     }
 }
 
@@ -26,9 +28,9 @@ pub async fn get_file(req: Request<AppState>) -> tide::Result {
         Ok(body.into())
     } else {
         tide::log::error!("file not found", {
-            path: fs_path.to_str(),
+            path: path,
         });
-        Ok(Response::new(StatusCode::NotFound))
+        return Err(tide::Error::from_str(404, "not found"))
     }
 }
 
@@ -64,6 +66,7 @@ pub async fn put_file(req: Request<AppState>) -> tide::Result {
 
 pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
     let path = req.param("file")?;
+    let file_name = String::from_str(path)?;
     let fs_path = req.state().path().join(path);
     let f = File::create(&fs_path).await?;
     
@@ -86,7 +89,7 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
 
                 fs::remove_file(fs_path).await?;
                 
-                return Ok(Response::new(StatusCode::BadRequest))
+                return Err(tide::Error::from_str(403, "file size limit exceeded"))
             }
         } else {
             if bytes_written > 0 {
@@ -102,19 +105,20 @@ pub async fn put_file_limited(req: Request<AppState>) -> tide::Result {
         None => "",
     };
 
+    
     tide::log::info!("file written", {
         bytes: bytes_written,
         path: path_str
     });
 
     let response = FileUploadResponse {
-        name: String::from(path_str),
+        name: file_name,
         size: bytes_written,
     };
 
     if let Ok(body) = Body::from_json(&response) {
         Ok(body.into())
     } else {
-        Ok(Response::new(StatusCode::BadRequest))
+        Err(tide::Error::from_str(500, "error"))
     }
 }
